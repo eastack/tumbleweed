@@ -1,0 +1,123 @@
+use anyhow::Result;
+use chrono::{DateTime, Local};
+use clap::{Parser, Subcommand};
+use inquire::Text;
+use jotdown::Event;
+use std::{
+    fs::{self, read_to_string},
+    path::PathBuf,
+};
+use tumbleweed::{config::{self, ChatGPTConfig}, create_new_post};
+use tumbleweed::ChatGPT;
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+#[command(next_line_help = true)]
+struct Cli {
+    /// Option name to operate on
+    name: Option<String>,
+
+    /// Sets a custom config file
+    #[arg(short, long, value_name = "FILE")]
+    config: Option<PathBuf>,
+
+    /// Trun debug info on
+    #[arg(short, long, action = clap::ArgAction::Count)]
+    debug: u8,
+
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// create new post
+    Create,
+}
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    //
+    let config = fs::read_to_string("./eastack.github.io/thumbleweed.toml")?;
+    let tconfig = config::get_config(&config)?;
+
+    let chatgpt = &tconfig
+        .chatgpt
+        .as_ref()
+        .map(|chatgpt| ChatGPT::new(&chatgpt.api_url, &chatgpt.api_key));
+
+    // let title = "Rust 项目实战";
+    // let result = match chatgpt {
+    //     Some(gpt) => gpt.title2en(title).await?,
+    //     None => title.to_string(),
+    // };
+    // println!("The english title is: {:?}", result);
+
+    let cli = Cli::parse();
+
+    if let Some(name) = cli.name.as_deref() {
+        println!("Value for name: {name}");
+    }
+
+    if let Some(config_path) = cli.config.as_deref() {
+        println!("Value for config: {}", config_path.display());
+    }
+
+    match cli.debug {
+        0 => println!("Debug mode is off"),
+        1 => println!("Debug mode is kind of on"),
+        2 => println!("Debug mode is on"),
+        _ => println!("Don't be crazy"),
+    }
+
+    match &cli.command {
+        Some(Commands::Create) => {
+            println!("Creating a new post");
+            let title = Text::new("Please enter the title for your blog post:").prompt()?;
+            let file_name = match chatgpt {
+                Some(gpt) => gpt.title2en(&title).await?,
+                _ => "".to_string(),
+            };
+
+            let dirname =
+                Text::new("Please enter the filename for your blog post(if ok press enter):")
+                    .with_initial_value(&file_name)
+                    .prompt()?;
+
+            create_new_post(&title, &dirname).await?
+        }
+        None => {}
+    }
+
+    let doc = read_to_string("./README.dj").expect("Got the readme");
+    let events = jotdown::Parser::new(&doc);
+    let mut peekable_events = events.peekable();
+    let sec_start = peekable_events.peek();
+    println!("Section start: {sec_start:?}");
+
+    let sec_start = peekable_events.peek().expect("Got first section start");
+    println!("Section start: {sec_start:?}");
+
+    let attributes = get_doc_metadata(sec_start);
+    println!("Attributes: {attributes}");
+    //let mut html = String::new();
+    //jotdown::html::Renderer.push(events, &mut html).unwrap();
+    //println!("html: {html}");
+    Ok(())
+}
+
+struct Post {
+    author: String,
+    create_time: DateTime<Local>,
+}
+
+fn get_doc_metadata(event: &Event<'_>) -> String {
+    match event {
+        Event::Start(jotdown::Container::Section { .. }, attributes) => {
+            println!("Start: {attributes:?}");
+            format!("Start: {attributes:?}")
+        }
+        _ => unreachable!(),
+    }
+}
+
