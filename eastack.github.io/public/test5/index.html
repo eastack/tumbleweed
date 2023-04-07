@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5. Rust Is a Scalable Language - EaStack</title>
+</head>
+<body>
+<section author="EaStack" id="5-Rust-Is-a-Scalable-Language" class="hello">
+<h1>5. Rust Is a Scalable Language</h1>
+<p>In my last post about <a href="https://matklad.github.io/2023/03/26/zig-and-rust.html"><em>Zig and Rust</em></a>, I mentioned that Rust is a &ldquo;scalable language&rdquo;.
+Let me expand on this a bit.</p>
+<section id="Vertical-Scalability">
+<h2>Vertical Scalability</h2>
+<p>Rust is vertically scalable, in that you can write all kinds of software in it.
+You can write an advanced zero-alloc image compression library, build a web server exposing the library to the world as an HTTP SAAS, and cobble together a &ldquo;script&rdquo; for building, testing, and deploying it to wherever people deploy software these days.
+And you would only need Rust &mdash; while it excels in the lowest half of the stack, it&rsquo;s pretty ok everywhere else too.</p>
+</section>
+<section id="Horizontal-Scalability">
+<h2>Horizontal Scalability</h2>
+<p>Rust is horizontally scalable, in that you can easily parallelize development of large software artifacts across many people and teams.
+Rust itself moves with a breakneck speed, which is surprising for such a loosely coordinated and chronically understaffed open source project of this scale.
+The relatively small community  managed to put together a comprehensive ecosystem of composable high-quality crates on a short notice.
+Rust is so easy to compose reliably that even the stdlib itself does not shy from pulling dependencies from crates.io.</p>
+<p>Steve Klabnik wrote about <a href="https://steveklabnik.com/writing/rusts-golden-rule"><em>Rust&rsquo;s Golden Rule</em></a>,
+how function signatures are mandatory and authoritative and explicitly define the interface both for the callers of the function and for the function&rsquo;s body.
+This thinking extends to other parts of the language.</p>
+<p>My second most favorite feature of Rust (after safety) is its module system.
+It has first-class support for the concept of a library.
+A library is called a crate and is a tree of modules, a unit of compilation, and a principle visibility boundary.
+Modules can contain circular dependencies, but libraries always form a directed acyclic graph.
+There&rsquo;s no global namespace of symbols &mdash; libraries are anonymous, names only appear on dependency edges between two libraries, and are local to the downstream crate.</p>
+<p>The benefits of this core compilation model are then greatly amplified by Cargo, which is not a generalized task runner, but rather a rigid specification for what is a package of Rust code:</p>
+<ul>
+<li>
+a (library) crate,
+</li>
+<li>
+a manifest, which defines dependencies between packages in a declarative way, using semver,
+</li>
+<li>
+an ecosystem-wide agreement on the semantics of dependency specification, and accompanied dependency resolution algorithm.
+</li>
+</ul>
+<p>Crucially, there&rsquo;s absolutely no way in Cargo to control the actual build process.
+The <code>build.rs</code> file can be used to provide extra runtime inputs, but it&rsquo;s <code>cargo</code> who calls <code>rustc</code>.</p>
+<p>Again, Cargo defines a rigid interface for a reusable piece of Rust code.
+Both producers and consumers must abide by these rules, there is no way around them.
+As a reward, they get a super-power of working together by working apart.
+I don&rsquo;t need to ping dtolnay in Slack when I want to use serde-json because we implicitly pre-agreed to a shared golden rule.</p>
+</section>
+</section>
+</body>
+</html>
