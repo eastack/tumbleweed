@@ -1,9 +1,13 @@
 {.hello}
-{author="EaStack"}
+{author="EaStack" date="2023-04-08"}
 # 1. Rust 1 Is a Scalable Language
 
 In my last post about [_Zig and Rust_](https://matklad.github.io/2023/03/26/zig-and-rust.html), I mentioned that Rust is a "scalable language".
 Let me expand on this a bit.
+
+* hello
+* world `code`
+
 
 ## Vertical Scalability
 

@@ -1,0 +1,40 @@
+use std::fs::{self, read_to_string, write};
+use std::path::Path;
+use tumbleweed::{Post, PostParser, Renderer};
+
+fn main() {
+    let config = tumbleweed::Config::new("config.toml");
+    let posts_dir = Path::new(&config.posts_dir);
+    let publish_dir = Path::new(&config.publish_dir);
+
+    let post_paths = fs::read_dir(posts_dir)
+        .unwrap()
+        .map(Result::unwrap)
+        .filter(|entry| entry.file_type().unwrap().is_file())
+        .map(DirEntry::path)
+        .map(PostParser::new);
+
+    let render = Renderer::new();
+    let posts = post_paths.map(|path| {
+        let post = read_to_string(&path).unwrap();
+        let post = PostParser::new(&post).parse();
+        let content = render.render_post(post);
+    });
+
+    for path in post_paths {
+        println!("Build :{path:?}");
+        let post = read_to_string(&path).unwrap();
+        let post = PostParser::new(&post).parse();
+        let post = render.render_post(post);
+
+        let path = path.strip_prefix(posts_dir).unwrap();
+        let path = publish_dir.join(path);
+        let path = path.with_extension("html");
+
+        println!("Write to: {path:?}");
+        fs::create_dir_all(&path).unwrap();
+        write(path, post).unwrap();
+    }
+
+    render
+}

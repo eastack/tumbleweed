@@ -1,12 +1,13 @@
 [package]
-name = "tumbleweed"
+name = "selaginella"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-handlebars = "4.3.6"
+anyhow = "1.0.70"
+chrono = { version="0.4.24", features=["serde"] }
 jotdown = "0.2"
-minijinja = "0.31.0"
+minijinja = { version="0.31.0", features=["source"] }
 serde = { version="1.0", features=["derive"] }
 toml = "0.7"
 

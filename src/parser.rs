@@ -1,3 +1,8 @@
+use std::fs::read_to_string;
+use std::path::PathBuf;
+
+use chrono::DateTime;
+use chrono::Local;
 use jotdown::Container::Heading;
 use jotdown::Container::Section;
 use jotdown::Event;
@@ -7,48 +12,44 @@ use serde::Serialize;
 
 #[derive(Debug, Serialize)]
 pub struct Post {
+    pub path: PathBuf,
+    pub : PathBuf,
     pub author: String,
     pub title: String,
-    pub content: String,
+    pub html: String,
+    pub date: DateTime<Local>,
 }
 
 #[derive(Debug)]
-pub struct PostMeta {
-    author: String,
-    title: String,
+pub struct PostParser {
+    path: PathBuf,
 }
 
-pub struct PostParser<'a>(Parser<'a>);
-
-impl<'a> PostParser<'a> {
-    pub fn new(doc: &'a str) -> Self {
-        Self(jotdown::Parser::new(&doc))
+impl PostParser {
+    pub fn new(path: PathBuf) -> Self {
+        Self { path }
     }
 
-    pub fn parse(&self) -> Post {
-        let mut content = String::new();
+    pub fn parse(self) -> Post {
+        let document = read_to_string(&self.path).unwrap();
+        let parser = Parser::new(&document);
+
+        let mut html = String::new();
         jotdown::html::Renderer::default()
-            .push(self.0.clone(), &mut content)
+            .push(parser.clone(), &mut html)
             .unwrap();
-        let metadata = self.metadata();
 
-        Post {
-            title: metadata.title,
-            author: metadata.author,
-            content,
-        }
-    }
-
-    pub fn metadata(&self) -> PostMeta {
         let mut author = Default::default();
         let mut title = Default::default();
+        let mut date = Default::default();
         let mut first_section = true;
         let mut heading_start = false;
 
-        for event in self.0.clone() {
+        for event in parser {
             match event {
                 Event::Start(Section { .. }, attributes) if first_section => {
                     author = String::from_iter(attributes.get("author").unwrap().parts());
+                    date = Local::now();
                     first_section = false;
                 }
                 Event::Start(Heading { level: 1, .. }, ..) => {
@@ -62,6 +63,12 @@ impl<'a> PostParser<'a> {
             }
         }
 
-        PostMeta { author, title }
+        Post {
+            path: self.path,
+            title,
+            date,
+            author,
+            html,
+        }
     }
 }

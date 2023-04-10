@@ -1,2 +1,3 @@
 site_name= "Hi"
 publish_dir= "public"
+posts_dir= "posts"
