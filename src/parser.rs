@@ -1,24 +1,14 @@
 use std::fs::read_to_string;
 use std::path::PathBuf;
 
-use chrono::DateTime;
 use chrono::Local;
 use jotdown::Container::Heading;
 use jotdown::Container::Section;
 use jotdown::Event;
 use jotdown::Parser;
 use jotdown::Render;
-use serde::Serialize;
 
-#[derive(Debug, Serialize)]
-pub struct Post {
-    pub path: PathBuf,
-    pub : PathBuf,
-    pub author: String,
-    pub title: String,
-    pub html: String,
-    pub date: DateTime<Local>,
-}
+use crate::Post;
 
 #[derive(Debug)]
 pub struct PostParser {

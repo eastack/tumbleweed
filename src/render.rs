@@ -12,7 +12,7 @@ impl<'a> HtmlRenderer<'a> {
         let index_template = read_to_string("./assets/index.html").unwrap();
         let post_template = read_to_string("./assets/post.html").unwrap();
         source.add_template("index", index_template).unwrap();
-        source.add_template("index", post_template).unwrap();
+        source.add_template("post", post_template).unwrap();
         env.set_source(source);
         HtmlRenderer(env)
     }
@@ -22,7 +22,7 @@ impl<'a> HtmlRenderer<'a> {
         tmpl.render(post).unwrap()
     }
 
-    pub fn render_index(&self, posts: Vec<&Post>) -> String {
+    pub fn render_index(&self, posts: &Vec<Post>) -> String {
         let tmpl = self.0.get_template("index").unwrap();
         tmpl.render(context!(posts => posts)).unwrap()
     }

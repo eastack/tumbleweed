@@ -2,14 +2,33 @@ mod config;
 mod parser;
 mod render;
 
+use chrono::{DateTime, Local};
 pub use config::*;
 pub use parser::*;
 pub use render::*;
+use serde::Serialize;
 
 use std::fs::{self, write};
 use std::path::PathBuf;
 
-struct Selaginella<'a> {
+#[derive(Debug, Serialize, Clone)]
+pub struct Post {
+    pub path: PathBuf,
+    pub author: String,
+    pub title: String,
+    pub html: String,
+    pub date: DateTime<Local>,
+}
+
+pub struct Index<'a> {
+    pub posts: &'a Vec<Post>,
+    pub author: String,
+    pub title: String,
+    pub html: String,
+    pub date: DateTime<Local>,
+}
+
+pub struct Selaginella<'a> {
     posts_dir: PathBuf,
     publish_dir: PathBuf,
     posts: Vec<Post>,
@@ -17,7 +36,7 @@ struct Selaginella<'a> {
 }
 
 impl<'a> Selaginella<'a> {
-    fn build(config: Config) -> anyhow::Result<Self> {
+    pub fn build(config: Config) -> anyhow::Result<Self> {
         let posts_dir = config.post_dir();
         let publish_dir = config.publish_dir();
 
@@ -42,36 +61,35 @@ impl<'a> Selaginella<'a> {
         })
     }
 
-    fn resurrection(&self) -> anyhow::Result<()> {
+    pub fn resurrection(&self) -> anyhow::Result<()> {
         for post in &self.posts {
-            let path = &post.path.strip_prefix(&self.posts_dir)?;
-            let path = path.with_extension("html");
-            let path = self.publish_dir.join(path);
+            let path = self
+                .publish_dir
+                .join(post.path.file_stem().unwrap())
+                .with_extension("html");
 
             fs::create_dir_all(&self.publish_dir)?;
             let post = self.render.render_post(&post);
 
             write(path, post)?;
 
-            let posts: Vec<_> = self
+            let posts = self
                 .posts
-                .iter_mut()
-                .map(|mut post| {
-                    post.path = post
+                .clone()
+                .into_iter()
+                .map(|post| Post {
+                    path: post
                         .path
                         .strip_prefix(&self.posts_dir)
                         .unwrap()
-                        .to_path_buf();
-                    post.path.set_extension("html");
-                    post
+                        .to_path_buf().with_extension("html"),
+                    ..post
                 })
                 .collect();
 
-            let index = self.render.render_index(posts);
+            let index = self.render.render_index(&posts);
             write(self.publish_dir.join("index.html"), index)?;
         }
         Ok(())
-
-        //Ok(())
     }
 }
